@@ -2,18 +2,188 @@
   box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-}
-
 body {
   margin: 0;
   background-image: url('../img/Background.png');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+header {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 100%;
 }
 
 h1 {
+  margin: 0;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 7em;
+  transform: perspective(300px) rotateX(25deg);
+  background: linear-gradient(#002027, #002027, #eaeaea, #002027, #002027);
+  -webkit-background-clip: text;
+  color: transparent;
+  background-clip: text;
+  -webkit-text-stroke: 0.1px dimgray;
+}
+
+#play {
+  font-size: 3em;
+}
+
+main {
+  width: 80%;
+  display: flex;
+  justify-content: space-between;
+  max-width: 900px;
+}
+
+.area {
+  width: 45%;
+}
+
+.grid {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.enemy .grid {
+  border: 2px solid rgb(255 0 0);
+  animation: glowred 1.5s infinite alternate;
+}
+
+.player .grid {
+  border: 2px solid rgb(0, 208, 255);
+  animation: glowblue 1.5s infinite alternate;
+}
+
+.cell {
+  width: 10%;
+  aspect-ratio: 1 / 1;
+  background-color: rgb(184 184 184 / 50%);
+  border: 1px solid rgb(0 255 248 / 67%);
+}
+
+.ships {
+  margin-top: 20px;
+  border-radius: 10px;
+  border: 2px solid #0094ff;
+  background-color: rgb(184 184 184 / 80%);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.ship {
+  width: 80px;
+}
+
+.carrier {
+  height: 185px;
+}
+
+.battleship {
+  height: 160px;
+}
+
+.cruiser {
+  height: 110px;
+}
+
+.stealth {
+  height: 95px;
+}
+
+.destroyer {
+  height: 75px;
+  width: 50px;
+}
+
+footer {
+  width: 80%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+button {
+  margin-top: 0;
+  padding: 1em 3em;
+  background-color: skyblue;
+  font-size: 1.1em;
+  font-family: 'Audiowide';
   color: white;
+  border: none;
+  text-shadow: 0px 7px 11px black;
+  border-radius: 100px;
+  box-shadow: 0 20px 25px 0px black;
+}
+
+
+#display {
+  background-color: black;
+  border: 2px solid transparent;
+  min-height: 100px;
+  border-radius: 18px;
+  animation: glow 1.5s infinite alternate;
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+p {
+  font-family: 'Audiowide', sans-serif;
+  color: #00ff00;
+}
+
+@keyframes glow {
+  0% {
+    border-color: #00ff00; /* Start color of the glowing border */
+    box-shadow: 0 0 10px #00ff00; /* Start box shadow */
+  }
+  100% {
+    border-color: #33ff33; /* End color of the glowing border */
+    box-shadow: 0 0 20px #33ff33; /* End box shadow, with a larger blur radius */
+  }
+}
+
+@keyframes glowred {
+  0% {
+    border-color: rgb(255 0 0); /* Start color of the glowing border */
+    box-shadow: 0 0 10px rgb(255 0 0); /* Start box shadow */
+  }
+  100% {
+    border-color: rgb(255 0 0); /* End color of the glowing border */
+    box-shadow: 0 0 20px rgb(255 0 0); /* End box shadow, with a larger blur radius */
+  }
+}
+
+@keyframes glowblue {
+  0% {
+    border-color: rgb(0, 208, 255); /* Start color of the glowing border */
+    box-shadow: 0 0 10px rgb(0, 208, 255); /* Start box shadow */
+  }
+  100% {
+    border-color: rgb(0, 208, 255); /* End color of the glowing border */
+    box-shadow: 0 0 20px rgb(0, 208, 255); /* End box shadow, with a larger blur radius */
+  }
+}
+
+
+.hover {
+  background-color: rgb(184 184 184 / 90%);
+}
+
+.hidden {
+  display: none;
 }
