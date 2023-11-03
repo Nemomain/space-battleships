@@ -14,6 +14,12 @@ class Ship{
     default horizontal: true
   }
 }
+
+teamShips{
+  constructor(Ship){
+    this.Ship[type] = Ship.type
+  }
+}
 */
 
 //* Variables
@@ -34,8 +40,10 @@ const enemyGrid NodeList
 
 //* Executions
 /*
-shipPlacement()(recursive) when player positions ships, careful of ship exiting designated grid
+playerPlacement()(recursive) when player positions ships, careful of ship exiting designated grid, if a paricular ship is selected twice, shipRemove() and allow new placement
 enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
+shipPlacement()
+shipRemove()
 
 battle()(recursive) when enemy turn starts 0.5 seconds timeout to give some breathing room
 enemyShot() if ship has been hit, find adjacent cells if not, randomise shot
