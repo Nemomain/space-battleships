@@ -184,6 +184,10 @@ p {
   background-color: rgb(184 184 184 / 90%);
 }
 
+.positioned {
+  background-color: rgba(0, 208, 255, 0.9)
+}
+
 .hidden {
   display: none;
 }

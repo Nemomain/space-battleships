@@ -5,7 +5,7 @@ class Ship{
   // cells: number,
   // horizontal: boolean (if not horizontal, it is vertical),
   // positions: [] (to be declared when placed),
-  // damagedCells: number,
+  // damagedCells: [],
   // destroyed: boolean,
   
   constructor(type) {
@@ -15,22 +15,17 @@ class Ship{
     if (type === 'destroyer') this.cells = 2
     this.type = type
     this.horizontal = true
-  }
-}
-
-class TeamShips{
-  constructor(Ship) {
-    this.shipList[0] = Ship
-  }
-  addShip(Ship) {
-    this.shipList.length <= 5 ? this.shipList.push(Ship) : false
+    this.positions = []
+    this.damagedCells = []
+    this.destroyed = false
   }
 }
 
 //* Variables
 
-let playerShips
-let enemyShips
+let playerShips = []
+const enemyShips = []
+let occupied = []
 let shipNew
 let turn = true
 let placementFinished = false
@@ -40,16 +35,125 @@ let placementFinished = false
 const playerGrid = document.querySelector('.player').querySelectorAll('.cell')
 const enemyGrid = document.querySelector('.enemy').querySelectorAll('.cell')
 const shipSelect = document.querySelector('.player').querySelectorAll('.ship')
+const enemySelect = document.querySelector('.player').querySelectorAll('.ship')
 const display = document.querySelector('#display')
 
 
 //* Executions
+//! PLACEMENTS
+function shipCells(index) {
+  if (shipNew) {
+    const targetCells = []
+    if (shipNew.horizontal === true) {
+      for (let i = 0; i < shipNew.cells; i++) {
+        if (i === 0 && index % 10 === 0) {
+          targetCells.push(index)
+          continue
+        }
+        if ((index + i) % 10 !== 0) {
+          targetCells.push(index + i)
+        } else {
+          return false
+        }
+      }
+    } else {
+      for (let i = 0; i < shipNew.cells; i++) {
+        if (index + (i * 10) < 100) {
+          targetCells.push(index + (i * 10))
+        } else {
+          return false
+        }
+      }
+    } 
+    return targetCells
+  } else {
+    return false
+  }
+}
+
 function playerPlacement(index) {
-  //if (shipNew.horizontal) {
+  const targetCells = shipCells(index)
+  const check = collision(targetCells)
+  if (targetCells && !check) {
+    targetCells.forEach(value => {
+      playerGrid[value].classList.add('positioned')
+      targetCells.forEach(value => shipNew.positions.push(value))
+      occupied = occupied.concat(targetCells)
+    })
+    playerShips.push(shipNew)
+    shipNew = undefined
+  } else if (check) {
+    announcement('<p>-- NO OVERLAP ALLOWED --</p>', 1000)
+  }
+  if (playerShips.length === 5){
+    placementFinished = !placementFinished
+    turn = !turn
+    info('<p>-- TO WAR!! --</p>')
+    announcement('<p>-- AI PLACING... --</p><p>-- PUNY HUMAN! --</p>', 2000)
+    setTimeout(() => {
+      enemyPlacement()
+    }, 2000)
+    occupied = []
+  }
 
-  //}
+} 
 
-} //(recursive) when player positions ships, careful of ship exiting designated grid, if a paricular ship is selected twice, shipRemove() and allow new placement
+function enemyPlacement() {
+  shipNew = undefined
+  // each ship individually, from biggest to smallest
+  enemySelect.forEach(spaceship => {
+    const type = spaceship.classList[1]
+    shipNew = new Ship(type)
+    shipNew.horizontal = Math.floor(Math.random() * 2)
+    // randomise position
+    let origin = Math.floor(Math.random() * 100)
+    let targetCells = shipCells(origin)
+    //no collision between ships
+    let check = collision(targetCells)
+    // randomise ship position until accepted
+    while (!targetCells || check) {
+      shipNew.horizontal = Math.floor(Math.random() * 2)
+      origin = Math.floor(Math.random() * 100)
+      targetCells = shipCells(origin)
+      check = collision(targetCells)
+    }
+    // assign values where needed
+    shipNew.positions = targetCells
+    occupied = occupied.concat(targetCells)
+    enemyShips.push(shipNew)
+  })
+  turn = !turn
+}
+// check for collision
+function collision(targetCells) {
+  let check
+  if (targetCells) {
+    check = targetCells.some(pos => occupied.includes(pos))
+    return check
+  }
+}
+//! END OF PLACEMENTS
+
+//! COMBAT
+function shot(){
+
+}
+
+//! GLOBAL AUXILIARIES
+
+function announcement(message, period) {
+  const recover = display.innerHTML
+  display.innerHTML = message
+  setTimeout(() => {
+    display.innerHTML = recover
+  }, period)
+}
+
+function info(message) {
+  display.innerHTML = message
+}
+
+//(recursive) when player positions ships, careful of ship exiting designated grid, if a paricular ship is selected twice, shipRemove() and allow new placement
 /*
 enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
 shipPlacement()
@@ -67,27 +171,31 @@ gameEnd()
 */
 
 //* Events
-// Player clicks on ship
+//! PLACEMENT EVENTS
+// Player clicks ON ship to select
 shipSelect.forEach(value => {
   value.addEventListener('click', (e) => {
     const type = e.target.classList[1]
+    // check if ship already exists
+    playerShips.forEach((value, index) => {
+      if (value.type === type) {
+        value.positions.forEach(val => playerGrid[val].classList.remove('positioned'))
+        playerShips = playerShips.splice(index, 1)
+      }
+    })
     shipNew = new Ship(type)
   })
 })
 
 // player places ships
 playerGrid.forEach((value, index) => {
-  value.addEventListener('click', (e) => {
-    if (!shipNew) {
-      const recover = display.innerHTML
-      display.innerHTML = '<p>-- YOU MUST CHOOSE A SHIP --</p>'
-      setTimeout(() => {
-        display.innerHTML = recover
-      }, 2000)
-      return
-    } else {
-      console.log(index)
-      playerPlacement(index)
+  value.addEventListener('click', () => {
+    if (!placementFinished) {
+      if (!shipNew) {
+        announcement('<p>-- YOU MUST CHOOSE A SHIP --</p>', 2000)
+      } else {
+        playerPlacement(index)
+      }
     }
   })
 })
@@ -96,33 +204,49 @@ playerGrid.forEach((value, index) => {
 // Mouse on hover
 playerGrid.forEach((value, index) => {
   value.addEventListener('mouseover', () => {
-    //clearing previous cells
-    playerGrid.forEach(cell => {
-      cell.classList.remove('hover')
-    })
+    cleanGrid(playerGrid)
     // finding cells to 'hover'
-    if (shipNew) {
-      if (shipNew.horizontal === true) {
-        const hoverCells = []
-        for (let i = 0; i < shipNew.cells; i++) {
-          if (i === 0 && index % 10 === 0) {
-            hoverCells.push(index)
-            continue
-          }
-          if ((index + i) % 10 !== 0) {
-            hoverCells.push(index + i)
-          } else {
-            return
-          }
-        }
-        hoverCells.forEach((val) => {
-          playerGrid[val].classList.add('hover')
-        })
-      }
+    const targetCells = shipCells(index)
+    // adding hover
+    if (targetCells) {
+      targetCells.forEach((val) => {
+        playerGrid[val].classList.add('hover')
+      })
     }
   })
 })
 
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    if (shipNew) {
+      shipNew.horizontal = !shipNew.horizontal
+    }
+  }
+})
+//! END OF PLACEMENT EVENTS
+
+//! COMBAT EVENTS
+enemyGrid.forEach((value, index) => {
+  value.addEventListener('mouseover', () => {
+    if (placementFinished) {
+      cleanGrid(enemyGrid)
+      enemyGrid[index].classList.add('hover')
+    }
+  })
+})
+
+enemyGrid.forEach((value, index) => {
+  value.addEventListener('click', (e) => {
+    shot(index) //! eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+  })
+})
+
+//! AUXILIARY EVENTS
+function cleanGrid(grid) {
+  grid.forEach(cell => {
+    cell.classList.remove('hover')
+  })
+}
 /*
 onkeyup to rotate the ships when placing and placementFinished === false
 ships selection onclick
