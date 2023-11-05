@@ -1,13 +1,9 @@
+//TODO: create hunt() so ai knows how to defat a ship that has been hit. create a playerShotCells[] and enemyShotCells[] to avoid shooting twice the same cell.
+//TODO: create announcements for the type of shup that has been hit/destroyed create a continueGame boolean to stop any continuation of the gameonce finished
+
 //* Objects
 
 class Ship{
-  // type: string,
-  // cells: number,
-  // horizontal: boolean (if not horizontal, it is vertical),
-  // positions: [] (to be declared when placed),
-  // damagedCells: [],
-  // destroyed: boolean,
-  
   constructor(type) {
     if (type === 'carrier') this.cells = 5
     if (type === 'battleship') this.cells = 4
@@ -25,7 +21,8 @@ class Ship{
 
 let playerShips = []
 const enemyShips = []
-let occupied = []
+let occupiedPlayer = []
+let occupiedEnemy = []
 let shipNew
 let turn = true
 let placementFinished = false
@@ -77,8 +74,8 @@ function playerPlacement(index) {
   if (targetCells && !check) {
     targetCells.forEach(value => {
       playerGrid[value].classList.add('positioned')
-      targetCells.forEach(value => shipNew.positions.push(value))
-      occupied = occupied.concat(targetCells)
+      shipNew.positions.push(value)
+      occupiedPlayer.push(value)
     })
     playerShips.push(shipNew)
     shipNew = undefined
@@ -93,7 +90,6 @@ function playerPlacement(index) {
     setTimeout(() => {
       enemyPlacement()
     }, 2000)
-    occupied = []
   }
 
 } 
@@ -106,20 +102,20 @@ function enemyPlacement() {
     shipNew = new Ship(type)
     shipNew.horizontal = Math.floor(Math.random() * 2)
     // randomise position
-    let origin = Math.floor(Math.random() * 100)
+    let origin = randomIndex()
     let targetCells = shipCells(origin)
     //no collision between ships
     let check = collision(targetCells)
     // randomise ship position until accepted
     while (!targetCells || check) {
       shipNew.horizontal = Math.floor(Math.random() * 2)
-      origin = Math.floor(Math.random() * 100)
+      origin = randomIndex()
       targetCells = shipCells(origin)
       check = collision(targetCells)
     }
     // assign values where needed
     shipNew.positions = targetCells
-    occupied = occupied.concat(targetCells)
+    occupiedEnemy = occupiedEnemy.concat(targetCells)
     enemyShips.push(shipNew)
   })
   turn = !turn
@@ -128,18 +124,71 @@ function enemyPlacement() {
 function collision(targetCells) {
   let check
   if (targetCells) {
-    check = targetCells.some(pos => occupied.includes(pos))
+    check = targetCells.some(pos => occupiedEnemy.includes(pos))
     return check
   }
 }
 //! END OF PLACEMENTS
 
 //! COMBAT
-function shot(){
+function shot(index){
+  const aim = painComingTo()
+  if (aim[2].includes(index)) {
+    hit(index)
+  } else {
+    miss(index)
+  }
+  turn = !turn
+  if (!turn) {
+    setTimeout(shot(randomIndex()), 500)
+  }
+}
 
+function hit(index) {
+  const aim = painComingTo()
+
+  aim[0].forEach(value => {
+    if (!value.damagedCells.includes(index)) {
+      value.damagedCells.push(index)
+      aim[1][index].innerHTML = '<img src="img/explosion.gif" alt=""></img>'
+      if (value.damagedCells.length === value.cells) {
+        value.destroyed = true
+        if (aim[0].every(ship => ship.destroyed === true)) {
+          endGame()
+        }
+      }
+    }
+  })
+  const au = new Audio('sound/explosion.mp3')
+  au.play()
+}
+
+function miss(index) {
+  const aim = painComingTo()
+  console.log(aim[1])
+  aim[1][index].style.backgroundColor = 'rgba(140 147 254 / 80%)'
+  const au = new Audio('sound/miss.mp3')
+  au.play()
 }
 
 //! GLOBAL AUXILIARIES
+function randomIndex() {
+  return Math.floor(Math.random() * 100)
+}
+
+function painComingTo() {
+  return turn ? [enemyShips, enemyGrid, occupiedEnemy] : [playerShips, playerGrid, occupiedPlayer]
+}
+
+function endGame() {
+  if (turn) {
+    // disallowing playes further input
+    turn = !turn
+    info('<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>')
+  } else {
+    info('<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>')
+  }
+}
 
 function announcement(message, period) {
   const recover = display.innerHTML
@@ -179,7 +228,10 @@ shipSelect.forEach(value => {
     // check if ship already exists
     playerShips.forEach((value, index) => {
       if (value.type === type) {
-        value.positions.forEach(val => playerGrid[val].classList.remove('positioned'))
+        value.positions.forEach(val => {
+          occupiedPlayer.splice(occupiedPlayer.indexOf(), 1)
+          playerGrid[val].classList.remove('positioned')
+        })
         playerShips = playerShips.splice(index, 1)
       }
     })
@@ -205,13 +257,15 @@ playerGrid.forEach((value, index) => {
 playerGrid.forEach((value, index) => {
   value.addEventListener('mouseover', () => {
     cleanGrid(playerGrid)
-    // finding cells to 'hover'
-    const targetCells = shipCells(index)
-    // adding hover
-    if (targetCells) {
-      targetCells.forEach((val) => {
-        playerGrid[val].classList.add('hover')
-      })
+    if (!placementFinished) {
+      // finding cells to 'hover'
+      const targetCells = shipCells(index)
+      // adding hover
+      if (targetCells) {
+        targetCells.forEach((val) => {
+          playerGrid[val].classList.add('hover')
+        })
+      }
     }
   })
 })
@@ -236,8 +290,11 @@ enemyGrid.forEach((value, index) => {
 })
 
 enemyGrid.forEach((value, index) => {
-  value.addEventListener('click', (e) => {
-    shot(index) //! eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+  value.addEventListener('click', () => {
+    if (turn) {
+      shot(index)
+    }
+    
   })
 })
 
@@ -255,6 +312,9 @@ click on all cells in enemyGrid to be activated when turn boolean favors player
 */
 
 //* Page load
-// document.addEventListener('DOMContentLoaded', () => {
-//   playerPlacement()
+//document.addEventListener('DOMContentLoaded', () => {
+//   setInterval(() => {
+//     const au = new Audio('sound/music.mp3')
+//     au.play()
+//   },164000)
 // })
