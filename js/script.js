@@ -1,6 +1,5 @@
-//TODO: create hunt() so ai knows how to defat a ship that has been hit. create a playerShotCells[] and enemyShotCells[] to avoid shooting twice the same cell.
-//TODO: create announcements for the type of shup that has been hit/destroyed create a continueGame boolean to stop any continuation of the gameonce finished
-
+//TODO: create hunt() so ai knows how to defat a ship that has been hit. Find out why computer turn starts to go crazy from mid to lategame.
+//TODO: create announcements for the type of ship that has been hit/destroyed create a continueGame boolean to stop any continuation of the game once finished
 //* Objects
 
 class Ship{
@@ -22,10 +21,16 @@ class Ship{
 let playerShips = []
 const enemyShips = []
 let occupiedPlayer = []
+const shotPlayerCells = []
+const hitPlayerCells = []
 let occupiedEnemy = []
+const shotEnemyCells = []
+const hitEnemyCells = []
 let shipNew
 let turn = true
 let placementFinished = false
+let continueGame = true
+let shotTaken = false
 
 //* Elements
 
@@ -100,7 +105,8 @@ function enemyPlacement() {
   enemySelect.forEach(spaceship => {
     const type = spaceship.classList[1]
     shipNew = new Ship(type)
-    shipNew.horizontal = Math.floor(Math.random() * 2)
+    // random orientation
+    Math.random() > 0.5 ? shipNew.horizontal = true : shipNew.horizontal = false
     // randomise position
     let origin = randomIndex()
     let targetCells = shipCells(origin)
@@ -108,7 +114,7 @@ function enemyPlacement() {
     let check = collision(targetCells)
     // randomise ship position until accepted
     while (!targetCells || check) {
-      shipNew.horizontal = Math.floor(Math.random() * 2)
+      Math.random() > 0.5 ? shipNew.horizontal = true : shipNew.horizontal = false
       origin = randomIndex()
       targetCells = shipCells(origin)
       check = collision(targetCells)
@@ -117,40 +123,55 @@ function enemyPlacement() {
     shipNew.positions = targetCells
     occupiedEnemy = occupiedEnemy.concat(targetCells)
     enemyShips.push(shipNew)
+    console.log('type: ' + shipNew.type + '  positions:' + shipNew.positions)
   })
   turn = !turn
 }
 // check for collision
 function collision(targetCells) {
-  let check
-  if (targetCells) {
-    check = targetCells.some(pos => occupiedEnemy.includes(pos))
-    return check
-  }
+  const occupied = turn ? occupiedPlayer : occupiedEnemy
+  if (targetCells) return targetCells.some(pos => occupied.includes(pos)) 
 }
 //! END OF PLACEMENTS
 
 //! COMBAT
+let control = 0 //TODO control variable for testing
 function shot(index){
-  const aim = painComingTo()
-  if (aim[2].includes(index)) {
-    hit(index)
-  } else {
-    miss(index)
+  if (continueGame) {
+    let aim = painComingTo()
+    if (aim[2].includes(index) && !aim[3].includes(index)) {
+      hit(index)
+      if (!turn) shotTaken = !shotTaken
+    } else if (aim[3].includes(index)) {
+      if (!turn) {
+        shot(randomIndex())
+        console.log(shotTaken)
+      } else {
+        control++
+        console.log(control)
+        announcement('<p>-- ENGAGE NEW TARGET --</p>', 1000)
+        return false
+      }
+    } else if (!aim[2].includes(index) && !aim[3].includes(index)){
+      miss(index)
+    }
+    aim[3].push(index)
+    turn = !turn
+    if (!turn && !shotTaken) {
+      setTimeout(() => shot(randomIndex()), 250)
+    }
   }
-  turn = !turn
-  if (!turn) {
-    setTimeout(shot(randomIndex()), 500)
-  }
+  shotTaken = false
 }
 
 function hit(index) {
   const aim = painComingTo()
-
   aim[0].forEach(value => {
-    if (!value.damagedCells.includes(index)) {
-      value.damagedCells.push(index)
+    //console.log(aim)//TODO check wth
+    if (value.positions.includes(index) && !value.damagedCells.includes(index)) {
+      value.damagedCells.push(index)//ok
       aim[1][index].innerHTML = '<img src="img/explosion.gif" alt=""></img>'
+      aim[4].push(index)
       if (value.damagedCells.length === value.cells) {
         value.destroyed = true
         if (aim[0].every(ship => ship.destroyed === true)) {
@@ -165,7 +186,6 @@ function hit(index) {
 
 function miss(index) {
   const aim = painComingTo()
-  console.log(aim[1])
   aim[1][index].style.backgroundColor = 'rgba(140 147 254 / 80%)'
   const au = new Audio('sound/miss.mp3')
   au.play()
@@ -177,47 +197,32 @@ function randomIndex() {
 }
 
 function painComingTo() {
-  return turn ? [enemyShips, enemyGrid, occupiedEnemy] : [playerShips, playerGrid, occupiedPlayer]
+  // an easy way to have all functions have a place to gather the target each turn
+  return turn ? [enemyShips, enemyGrid, occupiedEnemy, shotEnemyCells, hitEnemyCells] : [playerShips, playerGrid, occupiedPlayer,shotPlayerCells,hitPlayerCells ]
 }
 
 function endGame() {
   if (turn) {
     // disallowing playes further input
-    turn = !turn
     info('<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>')
   } else {
+    // this turn change goes here because as soon as endGame finishes hit() will change it again to false //blocking the player from further input
+    turn = !turn
     info('<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>')
   }
+  continueGame = false
 }
 
 function announcement(message, period) {
-  const recover = display.innerHTML
   display.innerHTML = message
   setTimeout(() => {
-    display.innerHTML = recover
+    display.innerHTML = '<p>-- War Spares No One --</p>'
   }, period)
 }
 
 function info(message) {
   display.innerHTML = message
 }
-
-//(recursive) when player positions ships, careful of ship exiting designated grid, if a paricular ship is selected twice, shipRemove() and allow new placement
-/*
-enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
-shipPlacement()
-shipRemove()
-
-battle()(recursive) when enemy turn starts 0.5 seconds timeout to give some breathing room
-enemyShot() if ship has been hit, find adjacent cells if not, randomise shot
-
-shot() find out if hit or miss, and pass corresponding cell to the appropriate function
-hit(cell) change data of ship object, play explosion sound and if possible dislay fire on top of ship in the cell. If ship is destroyed shipDestroyed()
-miss(cell) play spacey pewpew sound, color cell a non aggressive color and
-shipDestroyed()
-gameEnd()
-
-*/
 
 //* Events
 //! PLACEMENT EVENTS
@@ -291,19 +296,34 @@ enemyGrid.forEach((value, index) => {
 
 enemyGrid.forEach((value, index) => {
   value.addEventListener('click', () => {
-    if (turn) {
+    if (turn && placementFinished) {
       shot(index)
     }
-    
   })
 })
 
 //! AUXILIARY EVENTS
+
 function cleanGrid(grid) {
   grid.forEach(cell => {
     cell.classList.remove('hover')
   })
 }
+/*
+enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
+shipPlacement()
+shipRemove()
+
+battle()(recursive) when enemy turn starts 0.5 seconds timeout to give some breathing room
+enemyShot() if ship has been hit, find adjacent cells if not, randomise shot
+
+shot() find out if hit or miss, and pass corresponding cell to the appropriate function
+hit(cell) change data of ship object, play explosion sound and if possible dislay fire on top of ship in the cell. If ship is destroyed shipDestroyed()
+miss(cell) play spacey pewpew sound, color cell a non aggressive color and
+shipDestroyed()
+gameEnd()
+
+*/
 /*
 onkeyup to rotate the ships when placing and placementFinished === false
 ships selection onclick

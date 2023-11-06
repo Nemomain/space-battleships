@@ -4,11 +4,11 @@
 [githubrepo]: urltocome
 
 ## Timeframe
-9 days
+7 days
 
 ## Technologies used
-* JavaScript (ES6)
-* HTML5/HTML5 audio
+* JavaScript (ES6)/ JS audio
+* HTML5
 * CSS/Flexbox
 * GitHub
 
