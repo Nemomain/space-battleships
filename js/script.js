@@ -1,5 +1,5 @@
-//TODO: difficulty levels?? READMEEE
-//TODO: create announcements for the type of ship that has been hit/destroyed
+//TODO: difficulty levels?? 2 player functionality(refactor aim[] into player{}) ?? READMEEE
+//TODO: randomindex() less random. create announcements for the type of ship that has been hit/destroyed.
 //* Object's'
 
 class Ship{
@@ -31,7 +31,18 @@ let shipNew
 let turn = true
 let placementFinished = false
 let continueGame = true
-let control = 0 //TODO control variable for testing
+let targeting = [[], [] ]
+
+for (let i = 0; i < 10; i++) {
+  for (let f = i * 10; f < (i + 1) * 10; f++) {
+    if ((i % 2 === 0 && f % 2 === 0) || (i % 2 !== 0 && f % 2 !== 0)) {
+      targeting[0].push(f)
+    } else {
+      targeting[1].push(f)
+    }
+  }
+}
+
 
 //* Elements
 
@@ -98,7 +109,6 @@ function playerPlacement(index) {
       enemyPlacement()
     }, 2000)
   }
-
 } 
 
 function enemyPlacement() {
@@ -155,16 +165,19 @@ function shot(index){
 
 function enemyShot() {
   //to keep computer from running wild
-  let index
-  if (hunted.length !== 0) {
-    const options = huntRandom()
-    index = options[Math.floor(Math.random() * options.length)]
-  } else {
-    index = randomIndex()
-  } 
-  
   if (continueGame) {
     const aim = painComingTo()
+
+    if (targeting.length < 3) {
+      targeting.push(Math.random() > 0.5 ? 0 : 1)
+    }
+    let index
+    if (hunted.length !== 0) {
+      const options = huntRandom()
+      index = options[Math.floor(Math.random() * options.length)]
+    } else {
+      index = checkerboardIndex(aim)
+    }
     if (aim[2].includes(index) && !aim[3].includes(index)) {
       hit(index)
       hunt(index, aim)
@@ -236,17 +249,20 @@ function hit(index) {
   const aim = painComingTo()
   aim[0].forEach(value => {
     if (value.positions.includes(index) && !value.damagedCells.includes(index)) {
-      value.damagedCells.push(index)//ok
+      value.damagedCells.push(index)
+      info(`<p>-- ${value.type.charAt(0).toUpperCase() + value.type.slice(1)} has been hit!--</p>`)
       aim[1][index].innerHTML = '<img src="img/explosion.gif" alt=""></img>'
       if (!turn) aim[1][index].classList.add('positioned')
       aim[4].push(index)
       if (value.damagedCells.length === value.cells) {
         value.destroyed = true
+        info(`<p>-- ${value.type.charAt(0).toUpperCase() + value.type.slice(1)} has been DESTROYED!--</p>`)
         if (aim[0].every(ship => ship.destroyed === true)) endGame()
       }
     }
   })
   const au = new Audio('sound/explosion.mp3')
+  au.volume = 0.1
   au.play()
 }
 
@@ -255,11 +271,17 @@ function miss(index) {
   //console.log(`aim: ${aim} index: ${index}`)
   aim[1][index].style.backgroundColor = 'rgba(140 147 254 / 80%)'
   const au = new Audio('sound/miss.mp3')
+  au.volume = 0.1
   au.play()
 }
 //! END OF COMBAT
 
 //! GLOBAL AUXILIARIES
+function checkerboardIndex(aim) {
+  const index = Math.floor(Math.random() * 50)
+  return !aim[3].includes(targeting[targeting[2]][index]) ? targeting[targeting[2]][index] : checkerboardIndex(aim)
+}
+
 function randomIndex() {
   return Math.floor(Math.random() * 100)
 }
@@ -323,7 +345,7 @@ shipSelect.forEach(value => {
     playerShips.forEach((value, index) => {
       if (value.type === type) {
         value.positions.forEach(val => {
-          occupiedPlayer.splice(occupiedPlayer.indexOf(), 1)
+          occupiedPlayer.splice(occupiedPlayer.indexOf(val), 1)
           playerGrid[val].classList.remove('positioned')
         })
         playerShips = playerShips.splice(index, 1)
@@ -409,6 +431,7 @@ restart.addEventListener('click', () => {
   turn = true
   placementFinished = false
   continueGame = true
+  targeting = [[], []]
   wipeGrids()
   info('<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>')
 })

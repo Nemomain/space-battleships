@@ -144,7 +144,7 @@ button {
 #display {
   background-color: black;
   border: 2px solid transparent;
-  min-height: 100px;
+  height: 162px;
   border-radius: 18px;
   animation: glow 1.5s infinite alternate;
   width: 60%;
