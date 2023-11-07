@@ -1,6 +1,6 @@
-//TODO: create hunt() so ai knows how to defat a ship that has been hit. Find out why computer turn starts to go crazy from mid to lategame.
-//TODO: create announcements for the type of ship that has been hit/destroyed create a continueGame boolean to stop any continuation of the game once finished
-//* Objects
+//TODO: difficulty levels?? READMEEE
+//TODO: create announcements for the type of ship that has been hit/destroyed
+//* Object's'
 
 class Ship{
   constructor(type) {
@@ -17,20 +17,21 @@ class Ship{
 }
 
 //* Variables
-
+// all variables are let so the restart button can do its job
 let playerShips = []
-const enemyShips = []
+let enemyShips = []
 let occupiedPlayer = []
-const shotPlayerCells = []
-const hitPlayerCells = []
+let shotPlayerCells = []
+let hitPlayerCells = []
 let occupiedEnemy = []
-const shotEnemyCells = []
-const hitEnemyCells = []
+let shotEnemyCells = []
+let hitEnemyCells = []
+let hunted = []
 let shipNew
 let turn = true
 let placementFinished = false
 let continueGame = true
-let shotTaken = false
+let control = 0 //TODO control variable for testing
 
 //* Elements
 
@@ -39,6 +40,7 @@ const enemyGrid = document.querySelector('.enemy').querySelectorAll('.cell')
 const shipSelect = document.querySelector('.player').querySelectorAll('.ship')
 const enemySelect = document.querySelector('.player').querySelectorAll('.ship')
 const display = document.querySelector('#display')
+const restart = document.getElementById('restart')
 
 
 //* Executions
@@ -123,7 +125,6 @@ function enemyPlacement() {
     shipNew.positions = targetCells
     occupiedEnemy = occupiedEnemy.concat(targetCells)
     enemyShips.push(shipNew)
-    console.log('type: ' + shipNew.type + '  positions:' + shipNew.positions)
   })
   turn = !turn
 }
@@ -135,48 +136,113 @@ function collision(targetCells) {
 //! END OF PLACEMENTS
 
 //! COMBAT
-let control = 0 //TODO control variable for testing
 function shot(index){
   if (continueGame) {
-    let aim = painComingTo()
+    const aim = painComingTo()
     if (aim[2].includes(index) && !aim[3].includes(index)) {
       hit(index)
-      if (!turn) shotTaken = !shotTaken
     } else if (aim[3].includes(index)) {
-      if (!turn) {
-        shot(randomIndex())
-        console.log(shotTaken)
-      } else {
-        control++
-        console.log(control)
-        announcement('<p>-- ENGAGE NEW TARGET --</p>', 1000)
-        return false
-      }
+      announcement('<p>-- ENGAGE NEW TARGET --</p>', 1000)
+      return
     } else if (!aim[2].includes(index) && !aim[3].includes(index)){
       miss(index)
     }
     aim[3].push(index)
     turn = !turn
-    if (!turn && !shotTaken) {
-      setTimeout(() => shot(randomIndex()), 250)
+    setTimeout(() => enemyShot(), 750)
+  }
+}
+
+function enemyShot() {
+  //to keep computer from running wild
+  let index
+  if (hunted.length !== 0) {
+    const options = huntRandom()
+    index = options[Math.floor(Math.random() * options.length)]
+  } else {
+    index = randomIndex()
+  } 
+  
+  if (continueGame) {
+    const aim = painComingTo()
+    if (aim[2].includes(index) && !aim[3].includes(index)) {
+      hit(index)
+      hunt(index, aim)
+    } else if (aim[3].includes(index)) {
+      enemyShot()
+    } else {
+      miss(index)
+    }
+    aim[3].push(index)
+    turn = true
+  }
+}
+
+function hunt(index, aim) {
+  aim[0].forEach(value => {
+    if (value.positions.includes(index)){
+      if (hunted.find(h => h.type === value.type)) {
+        hunted.forEach((h) => {
+          if (h.type === value.type) {
+            h.positions.push(index)
+            if (value.destroyed) hunted.splice(hunted.indexOf(h), 1)
+          }
+        })
+      } else {
+        hunted.push({ type: value.type, positions: [index] })
+      }
+    }
+  })
+}
+
+function huntRandom(){
+  let options
+  const killTarget = hunted[0].positions
+  if (killTarget.length === 1) {
+    options = [killTarget[0] + 1, killTarget[0] - 1, killTarget[0] + 10, killTarget[0] - 10]
+    for (let i = options.length - 1; i >= 0; i--) {
+      if (i < 0 || i > 99 || shotPlayerCells.includes(i)) {
+        options.splice(i, 1)
+      }
+    }
+    // options.forEach((i, p) => {
+    // })
+    if (killTarget[0] % 10 === 0) options.splice(1, 1)
+    if (killTarget[0] % 10 === 9) options.splice(0, 1)
+  } else if (hunted[0].horizontal === undefined) {
+    
+    if (killTarget[0] === killTarget[1] + 1 || killTarget[0] === killTarget[1] - 1) hunted[0].horizontal = true
+    if (killTarget[0] === killTarget[1] + 10 || killTarget[0] === killTarget[1] - 10) hunted[0].horizontal = false
+  }
+  if (killTarget.length > 1){
+    if (hunted[0].horizontal) {
+      if (Math.max(...killTarget) % 10 !== 9 && !shotPlayerCells.includes(Math.max(...killTarget) + 1)) {
+        options = [Math.max(...killTarget) + 1]
+      } else {
+        options = [Math.min(...killTarget) - 1]
+      }
+    } else {
+      if (Math.max(...killTarget) + 10 < 100 && !shotPlayerCells.includes(Math.max(...killTarget) + 10)) {
+        options = [Math.max(...killTarget) + 10]
+      } else {
+        options = [Math.min(...killTarget) - 10]
+      }
     }
   }
-  shotTaken = false
+  return options
 }
 
 function hit(index) {
   const aim = painComingTo()
   aim[0].forEach(value => {
-    //console.log(aim)//TODO check wth
     if (value.positions.includes(index) && !value.damagedCells.includes(index)) {
       value.damagedCells.push(index)//ok
       aim[1][index].innerHTML = '<img src="img/explosion.gif" alt=""></img>'
+      if (!turn) aim[1][index].classList.add('positioned')
       aim[4].push(index)
       if (value.damagedCells.length === value.cells) {
         value.destroyed = true
-        if (aim[0].every(ship => ship.destroyed === true)) {
-          endGame()
-        }
+        if (aim[0].every(ship => ship.destroyed === true)) endGame()
       }
     }
   })
@@ -186,10 +252,12 @@ function hit(index) {
 
 function miss(index) {
   const aim = painComingTo()
+  //console.log(`aim: ${aim} index: ${index}`)
   aim[1][index].style.backgroundColor = 'rgba(140 147 254 / 80%)'
   const au = new Audio('sound/miss.mp3')
   au.play()
 }
+//! END OF COMBAT
 
 //! GLOBAL AUXILIARIES
 function randomIndex() {
@@ -215,8 +283,9 @@ function endGame() {
 
 function announcement(message, period) {
   display.innerHTML = message
+  const replace = placementFinished ? '<p>-- War Spares No One --</p>' : '<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>'
   setTimeout(() => {
-    display.innerHTML = '<p>-- War Spares No One --</p>'
+    display.innerHTML = replace
   }, period)
 }
 
@@ -224,6 +293,26 @@ function info(message) {
   display.innerHTML = message
 }
 
+function cleanGrid(grid) {
+  grid.forEach(cell => {
+    cell.classList.remove('hover')
+  })
+}
+
+function wipeGrids() {
+  enemyGrid.forEach((e) => {
+    e.innerHTML = ''
+    e.className = 'cell'
+    e.removeAttribute('style')
+  })
+  playerGrid.forEach((e) => {
+    e.innerHTML = ''
+    e.className = 'cell'
+    e.removeAttribute('style')
+  })
+}
+
+//! END OF EXECUTIONS
 //* Events
 //! PLACEMENT EVENTS
 // Player clicks ON ship to select
@@ -282,9 +371,11 @@ document.addEventListener('keyup', (e) => {
     }
   }
 })
+
 //! END OF PLACEMENT EVENTS
 
 //! COMBAT EVENTS
+
 enemyGrid.forEach((value, index) => {
   value.addEventListener('mouseover', () => {
     if (placementFinished) {
@@ -304,11 +395,23 @@ enemyGrid.forEach((value, index) => {
 
 //! AUXILIARY EVENTS
 
-function cleanGrid(grid) {
-  grid.forEach(cell => {
-    cell.classList.remove('hover')
-  })
-}
+restart.addEventListener('click', () => {
+  playerShips = []
+  enemyShips = []
+  occupiedPlayer = []
+  shotPlayerCells = []
+  hitPlayerCells = []
+  occupiedEnemy = []
+  shotEnemyCells = []
+  hitEnemyCells = []
+  hunted = []
+  shipNew = undefined
+  turn = true
+  placementFinished = false
+  continueGame = true
+  wipeGrids()
+  info('<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>')
+})
 /*
 enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
 shipPlacement()
