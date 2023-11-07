@@ -1,5 +1,4 @@
 //TODO: difficulty levels?? 2 player functionality(refactor aim[] into player{}) ?? READMEEE
-//TODO: randomindex() less random. create announcements for the type of ship that has been hit/destroyed.
 //* Object's'
 
 class Ship{
@@ -31,7 +30,7 @@ let shipNew
 let turn = true
 let placementFinished = false
 let continueGame = true
-let targeting = [[], [] ]
+let targeting = [[], []]
 
 for (let i = 0; i < 10; i++) {
   for (let f = i * 10; f < (i + 1) * 10; f++) {
@@ -218,8 +217,6 @@ function huntRandom(){
         options.splice(i, 1)
       }
     }
-    // options.forEach((i, p) => {
-    // })
     if (killTarget[0] % 10 === 0) options.splice(1, 1)
     if (killTarget[0] % 10 === 9) options.splice(0, 1)
   } else if (hunted[0].horizontal === undefined) {
