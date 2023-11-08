@@ -38,8 +38,15 @@ h1 {
   font-size: 7em;
 }
 
-#play {
-  font-size: 3em;
+.botonera {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  height: 80vh;
+}
+
+.play {
+  font-size: 2em;
 }
 
 main {

@@ -31,6 +31,8 @@ let turn = true
 let placementFinished = false
 let continueGame = true
 let targeting = [[], []]
+const gameMode = localStorage.getItem('gameMode')
+console.log('gamemode-> ' + gameMode)
 
 for (let i = 0; i < 10; i++) {
   for (let f = i * 10; f < (i + 1) * 10; f++) {
@@ -175,7 +177,11 @@ function enemyShot() {
       const options = huntRandom()
       index = options[Math.floor(Math.random() * options.length)]
     } else {
-      index = checkerboardIndex(aim)
+      if (gameMode === 'easy') {
+        index = randomIndex()
+      } else {
+        index = checkerboardIndex(aim)
+      }
     }
     if (aim[2].includes(index) && !aim[3].includes(index)) {
       hit(index)
@@ -213,7 +219,7 @@ function huntRandom(){
   if (killTarget.length === 1) {
     options = [killTarget[0] + 1, killTarget[0] - 1, killTarget[0] + 10, killTarget[0] - 10]
     for (let i = options.length - 1; i >= 0; i--) {
-      if (i < 0 || i > 99 || shotPlayerCells.includes(i)) {
+      if (i < 0 || i > 99 || shotPlayerCells.includes(options[i])) {
         options.splice(i, 1)
       }
     }
@@ -294,7 +300,7 @@ function endGame() {
     info('<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>')
   } else {
     // this turn change goes here because as soon as endGame finishes hit() will change it again to false //blocking the player from further input
-    turn = !turn
+    turn = false
     info('<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>')
   }
   continueGame = false
@@ -432,32 +438,3 @@ restart.addEventListener('click', () => {
   wipeGrids()
   info('<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>')
 })
-/*
-enemyPlacement() (find positions of already placed ships to avoid collision and ships touching)
-shipPlacement()
-shipRemove()
-
-battle()(recursive) when enemy turn starts 0.5 seconds timeout to give some breathing room
-enemyShot() if ship has been hit, find adjacent cells if not, randomise shot
-
-shot() find out if hit or miss, and pass corresponding cell to the appropriate function
-hit(cell) change data of ship object, play explosion sound and if possible dislay fire on top of ship in the cell. If ship is destroyed shipDestroyed()
-miss(cell) play spacey pewpew sound, color cell a non aggressive color and
-shipDestroyed()
-gameEnd()
-
-*/
-/*
-onkeyup to rotate the ships when placing and placementFinished === false
-ships selection onclick
-click on all cells in enemyGrid to be activated when turn boolean favors player
-
-*/
-
-//* Page load
-//document.addEventListener('DOMContentLoaded', () => {
-//   setInterval(() => {
-//     const au = new Audio('sound/music.mp3')
-//     au.play()
-//   },164000)
-// })
