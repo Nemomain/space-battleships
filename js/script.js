@@ -360,7 +360,7 @@ function painComingTo() {
 }
 
 function endGame() {
-  const screen = gameMode === '2p' ? ['<p>-- PLAYER 2 WINS! --</p>', '<p>-- PLAYER 1 WINS! --</p>'] : ['<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>', '<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>']
+  const screen = gameMode === '2p' ? ['<p>-- PLAYER 2 WINS! --</p>', '<p>-- PLAYER 1 WINS! --</p>'] : ['<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>', '<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>']
   turn = !turn
   revisualize()
   turn = !turn
@@ -381,7 +381,7 @@ function endGame() {
 
 function announcement(message, period) {
   display.innerHTML = message
-  const replace = placementFinished ? '<p>-- All YOUR BASE ARE BELONG TO US!--</p>' : '<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>'
+  const replace = placementFinished ? '<p>-- All YOUR BASE ARE BELONG TO US! --</p>' : '<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>'
   if (continueGame) {
     setTimeout(() => {
       display.innerHTML = replace
