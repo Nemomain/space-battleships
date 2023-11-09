@@ -66,6 +66,13 @@ main {
   flex-wrap: wrap;
 }
 
+.over {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: rgba(184, 184, 184, 0.6);
+  display: none;
+}
+
 .enemy .grid {
   border: 2px solid rgb(255 0 0);
   animation: glowred 1.5s infinite alternate;

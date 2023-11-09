@@ -17,6 +17,7 @@ class Ship{
 
 //* Variables
 // all variables are let so the restart button can do its job
+let turndata // this varable is so eventlisteners for placing can work
 let playerShips = []
 let enemyShips = []
 let occupiedPlayer = []
@@ -32,8 +33,31 @@ let placementFinished = false
 let continueGame = true
 let targeting = [[], []]
 const gameMode = localStorage.getItem('gameMode')
-console.log('gamemode-> ' + gameMode)
 
+
+//* Elements
+
+const playerGrid = document.querySelector('.player').querySelectorAll('.cell')
+const enemyGrid = document.querySelector('.enemy').querySelectorAll('.cell')
+const shipSelect = document.querySelector('.player').querySelectorAll('.ship')
+const shipSelectEnemy = document.querySelector('.enemy').querySelectorAll('.ship')
+const enemySelect = document.querySelector('.player').querySelectorAll('.ship')
+const display = document.querySelector('#display')
+const restart = document.getElementById('restart')
+
+
+//variable generation
+if (gameMode === '2p') {
+  turn = !turn
+  const player1 = painComingTo()
+  turn = true
+  const player2 = painComingTo()
+  turndata = [player1, player2]
+} else {
+  turn = !turn
+  turndata = [painComingTo()]
+  turn = true
+}
 for (let i = 0; i < 10; i++) {
   for (let f = i * 10; f < (i + 1) * 10; f++) {
     if ((i % 2 === 0 && f % 2 === 0) || (i % 2 !== 0 && f % 2 !== 0)) {
@@ -43,17 +67,6 @@ for (let i = 0; i < 10; i++) {
     }
   }
 }
-
-
-//* Elements
-
-const playerGrid = document.querySelector('.player').querySelectorAll('.cell')
-const enemyGrid = document.querySelector('.enemy').querySelectorAll('.cell')
-const shipSelect = document.querySelector('.player').querySelectorAll('.ship')
-const enemySelect = document.querySelector('.player').querySelectorAll('.ship')
-const display = document.querySelector('#display')
-const restart = document.getElementById('restart')
-
 
 //* Executions
 //! PLACEMENTS
@@ -87,28 +100,52 @@ function shipCells(index) {
   }
 }
 
-function playerPlacement(index) {
+function playerPlacement(index) { //TODO work in progress!
   const targetCells = shipCells(index)
-  const check = collision(targetCells)
+  let aim
+  if (turn) {
+    aim = [playerShips, playerGrid, occupiedPlayer]
+  } else {
+    aim = [enemyShips, enemyGrid, occupiedEnemy]
+  }
+  const check = collision(targetCells)//here
   if (targetCells && !check) {
     targetCells.forEach(value => {
-      playerGrid[value].classList.add('positioned')
+      aim[1][value].classList.add('positioned')
       shipNew.positions.push(value)
-      occupiedPlayer.push(value)
+      aim[2].push(value)
     })
-    playerShips.push(shipNew)
+    aim[0].push(shipNew)
     shipNew = undefined
   } else if (check) {
     announcement('<p>-- NO OVERLAP ALLOWED --</p>', 1000)
   }
-  if (playerShips.length === 5){
-    placementFinished = !placementFinished
-    turn = !turn
-    info('<p>-- TO WAR!! --</p>')
-    announcement('<p>-- AI PLACING... --</p><p>-- PUNY HUMAN! --</p>', 2000)
-    setTimeout(() => {
-      enemyPlacement()
-    }, 2000)
+  if (aim[0].length === 5){
+    if (gameMode !== '2p') {
+      placementFinished = !placementFinished
+      turn = !turn
+      info('<p>-- TO WAR!! --</p>')
+      announcement('<p>-- AI PLACING... --</p><p>-- PUNY HUMAN! --</p>', 2000)
+      setTimeout(() => {
+        enemyPlacement()
+      }, 2000)
+    } else if (turn) {
+      obscure()
+      announcement('<p>-- PLAYER 2 PLACE YOUR SHIPS! --</p>', 3000)
+      setTimeout(() =>{
+        turn = !turn
+      }, 3000)
+    } else if (!turn) {
+      placementFinished = !placementFinished
+      // this timeout is needed to ensure player 2 doesent shoot himself!
+      obscure()
+      setTimeout(() =>{
+        turn = !turn
+      }, 50)
+      info('<p>-- TO WAR!! --</p>')
+      announcement('<p>-- PLAYER 1 STARTS! --</p>', 3000)
+      setTimeout(() => revisualize(), 3000)
+    }
   }
 } 
 
@@ -159,8 +196,16 @@ function shot(index){
       miss(index)
     }
     aim[3].push(index)
-    turn = !turn
-    setTimeout(() => enemyShot(), 750)
+    if (gameMode !== '2p') {
+      turn = !turn
+      setTimeout(() => enemyShot(), 750)
+    } else {
+      obscure()
+      turn = !turn
+      const who = turn ? '1' : '2'
+      setTimeout(() => announcement('<p>-- PLAYER ' + who + ' TURN! --</p>', 3000), 3000)
+      setTimeout(() => revisualize(), 4000)
+    }
   }
 }
 
@@ -219,7 +264,7 @@ function huntRandom(){
   if (killTarget.length === 1) {
     options = [killTarget[0] + 1, killTarget[0] - 1, killTarget[0] + 10, killTarget[0] - 10]
     for (let i = options.length - 1; i >= 0; i--) {
-      if (i < 0 || i > 99 || shotPlayerCells.includes(options[i])) {
+      if (options[i] < 0 || options[i] > 99 || shotPlayerCells.includes(options[i])) {
         options.splice(i, 1)
       }
     }
@@ -260,7 +305,11 @@ function hit(index) {
       if (value.damagedCells.length === value.cells) {
         value.destroyed = true
         info(`<p>-- ${value.type.charAt(0).toUpperCase() + value.type.slice(1)} has been DESTROYED!--</p>`)
-        if (aim[0].every(ship => ship.destroyed === true)) endGame()
+        if (aim[0].every(ship => ship.destroyed === true)){
+          continueGame = false
+          setTimeout(endGame(), 2000)
+          
+        } 
       }
     }
   })
@@ -291,27 +340,37 @@ function randomIndex() {
 
 function painComingTo() {
   // an easy way to have all functions have a place to gather the target each turn
-  return turn ? [enemyShips, enemyGrid, occupiedEnemy, shotEnemyCells, hitEnemyCells] : [playerShips, playerGrid, occupiedPlayer,shotPlayerCells,hitPlayerCells ]
+  return turn ? [enemyShips, enemyGrid, occupiedEnemy, shotEnemyCells, hitEnemyCells, shipSelectEnemy, false] : [playerShips, playerGrid, occupiedPlayer, shotPlayerCells, hitPlayerCells, shipSelect, true]
 }
 
 function endGame() {
-  if (turn) {
-    // disallowing playes further input
-    info('<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>')
-  } else {
-    // this turn change goes here because as soon as endGame finishes hit() will change it again to false //blocking the player from further input
-    turn = false
-    info('<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>')
-  }
-  continueGame = false
+  const screen = gameMode === '2p' ? ['<p>-- PLAYER 1 WINS! --</p>', '<p>-- PLAYER 2 WINS! --</p>'] : ['<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>', '<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>']
+  turn = !turn
+  revisualize()
+  turn = !turn
+  revisualize()
+  let count = 0
+  const interval = setInterval(() => {
+    count++
+    if (turn) {
+      info(screen[0])
+    } else {
+      info(screen[1])
+    }
+    if (count === 1000) {
+      clearInterval(interval)
+    }
+  }, 15)
 }
 
 function announcement(message, period) {
   display.innerHTML = message
-  const replace = placementFinished ? '<p>-- War Spares No One --</p>' : '<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>'
-  setTimeout(() => {
-    display.innerHTML = replace
-  }, period)
+  const replace = placementFinished ? '<p>-- All YOUR BASE ARE BELONG TO US!--</p>' : '<p>-- Click on ship to select --</p><p>-- Press Space to Rotate --</p><p>-- Reselect Ship to Place Again --</p>'
+  if (continueGame) {
+    setTimeout(() => {
+      display.innerHTML = replace
+    }, period)
+  }
 }
 
 function info(message) {
@@ -337,55 +396,74 @@ function wipeGrids() {
   })
 }
 
+function obscure() {
+  const wipe = turn ? playerGrid : enemyGrid
+  wipe.forEach(cell => {
+    cell.classList.remove('positioned')
+  })
+}
+
+function revisualize() {
+  const visible = turn ? playerShips : enemyShips
+  const visGrid = turn ? playerGrid : enemyGrid
+  visible.forEach(ship => {
+    ship.positions.forEach(cell => {
+      visGrid[cell].classList.add('positioned')
+    })
+  })
+}
+
 //! END OF EXECUTIONS
 //* Events
 //! PLACEMENT EVENTS
-// Player clicks ON ship to select
-shipSelect.forEach(value => {
-  value.addEventListener('click', (e) => {
-    const type = e.target.classList[1]
-    // check if ship already exists
-    playerShips.forEach((value, index) => {
-      if (value.type === type) {
-        value.positions.forEach(val => {
-          occupiedPlayer.splice(occupiedPlayer.indexOf(val), 1)
-          playerGrid[val].classList.remove('positioned')
-        })
-        playerShips = playerShips.splice(index, 1)
+
+turndata.forEach((data) => {
+  data[5].forEach(value => {
+    value.addEventListener('click', (e) => {
+      // Player clicks ON ship to select
+      const type = e.target.classList[1]
+      // check if ship already exists
+      data[0].forEach((value, index) => {
+        if (value.type === type) {
+          value.positions.forEach(val => {
+            data[2].splice(data[0].indexOf(val), 1)
+            data[1][val].classList.remove('positioned')
+          })
+          data[0] = data[0].splice(index, 1)
+        }
+      })
+      shipNew = new Ship(type)
+    })
+  })
+  
+  // player places ships
+  data[1].forEach((value, index) => {
+    value.addEventListener('click', () => {
+      if (!placementFinished && turn === data[6]) {
+        if (!shipNew) {
+          announcement('<p>-- YOU MUST CHOOSE A SHIP --</p>', 2000)
+        } else {
+          playerPlacement(index)
+        }
       }
     })
-    shipNew = new Ship(type)
   })
-})
-
-// player places ships
-playerGrid.forEach((value, index) => {
-  value.addEventListener('click', () => {
-    if (!placementFinished) {
-      if (!shipNew) {
-        announcement('<p>-- YOU MUST CHOOSE A SHIP --</p>', 2000)
-      } else {
-        playerPlacement(index)
+  
+  // Mouse on hover
+  data[1].forEach((value, index) => {
+    value.addEventListener('mouseover', () => {
+      cleanGrid(data[1])
+      if (!placementFinished && turn === data[6]) {
+        // finding cells to 'hover'
+        const targetCells = shipCells(index)
+        // adding hover
+        if (targetCells) {
+          targetCells.forEach((val) => {
+            data[1][val].classList.add('hover')
+          })
+        }
       }
-    }
-  })
-})
- 
-
-// Mouse on hover
-playerGrid.forEach((value, index) => {
-  value.addEventListener('mouseover', () => {
-    cleanGrid(playerGrid)
-    if (!placementFinished) {
-      // finding cells to 'hover'
-      const targetCells = shipCells(index)
-      // adding hover
-      if (targetCells) {
-        targetCells.forEach((val) => {
-          playerGrid[val].classList.add('hover')
-        })
-      }
-    }
+    })
   })
 })
 
@@ -403,8 +481,9 @@ document.addEventListener('keyup', (e) => {
 
 enemyGrid.forEach((value, index) => {
   value.addEventListener('mouseover', () => {
-    if (placementFinished) {
+    if (placementFinished && turn) {
       cleanGrid(enemyGrid)
+      cleanGrid(playerGrid)
       enemyGrid[index].classList.add('hover')
     }
   })
@@ -417,6 +496,28 @@ enemyGrid.forEach((value, index) => {
     }
   })
 })
+
+if (gameMode === '2p') {
+  playerGrid.forEach((value, index) => {
+    value.addEventListener('mouseover', () => {
+      if (placementFinished && !turn) {
+        cleanGrid(enemyGrid)
+        cleanGrid(playerGrid)
+        playerGrid[index].classList.add('hover')
+      }
+    })
+  })
+
+  playerGrid.forEach((value, index) => {
+    value.addEventListener('click', () => {
+      if (!turn && placementFinished) {
+        shot(index)
+      }
+    })
+  })
+}
+
+
 
 //! AUXILIARY EVENTS
 
