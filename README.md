@@ -29,15 +29,24 @@ The brief we were handed specified the following:
 
 Create a browser game using vanilla JavaScript, HTML, and CSS. The game must:
 
-Render a game in the browser
-Include win/loss logic and render win/loss messages in HTML
-Include separate HTML, CSS, and JavaScript files
-Have properly indented HTML, CSS, and JavaScript with consistent vertical whitespace
-Have no remaining unused or commented out code
-Have sensible function and variable names
-Be coded in a consistent manner
-Be deployed online using GitHub pages
-In addition, before starting work on the game, a wireframe and basic pseudocode for the gameplay had to be presented and approved.
+-Render a game in the browser
+
+-Include win/loss logic and render win/loss messages in HTML
+
+-Include separate HTML, CSS, and JavaScript files
+
+-Have properly indented HTML, CSS, and JavaScript with consistent vertical whitespace
+
+-Have no remaining unused or commented out code
+
+-Have sensible function and variable names
+
+-Be coded in a consistent manner
+
+-Be deployed online using GitHub pages
+
+-In addition, before starting work on the game, a wireframe and basic pseudocode for the gameplay had to be presented and approved.
+
 
 ## Project Planning
 I provided a basic wireframe of the playing field:
@@ -102,7 +111,7 @@ click on all cells in enemyGrid to be activated when turn boolean favors player
 ```
 
 ## Coding/Building Process
-At fist, I dedicated a whole day to create the HTML and nail the styling:
+At first, I dedicated a whole day to create the HTML and nail the styling:
 
 <img src="img/styling.png">
 
@@ -136,7 +145,7 @@ shipSelect.forEach(value => {
   })
 })
 ```
-  -Allowing the selected ship to be placed in the grid, manaaging when no ship has been selected:
+  -Allowing the selected ship to be placed in the grid, managing when no ship has been selected:
 
 ```javascript
 // player places ships
@@ -189,9 +198,10 @@ playerGrid.forEach((value, index) => {
 })
 
 ```
-From then on I had to code the player ship placement and the computers', avoiding collisions and allowing both horizontal and vertical placement, and in the case of the player, allowing to reposition any ship.
+From then on I had to code the player ship placement and the computer's, avoiding collisions and allowing both horizontal and vertical placement, and in the case of the player, allowing to reposition any ship.
 
 From that point on, I started working on the second phase of the game, the "combat". I created a function to randomise computer shots, to get to work and debug the game until it finally worked and eventually reprogrammed it so shots weren't completely random. In the meantime I had a very big issue because shot() handled both player and computer shots:
+
   -Original shot() code:
 
 ```javascript
@@ -223,6 +233,7 @@ function shot(index){
 ```
 
 I believe it was the recursiveness that caused the computer, in some machines, to take multiple shots; sometimes to its own grid. To tackle this issue, in later versions shot() would be independent from enemyShot():
+
   -Separated funtions for shot() and enemyShot():
 
 ```javascript
@@ -274,6 +285,7 @@ function enemyShot() {
 Of course, in the meantime, I implemented many details, such as audio feedback for shots and misses, explosion gifs for hit cells, and messaging on the bottom display.
 
 I eventually created an algorithm for hunting a ship that has been hit already and a checkerboard pattern to make the computers shooting algorithm a bit more 'purposeful' when not engaged in an active hunt (this last part was for some weird reason THE single hardest thing to conceptualise for me):
+
   -How the checkerboard tergeting pattern is created and implemented (targeting[2] is randomised the first time the computer takes a shot, can be seen in the code provided above):
 
 ```javascript
@@ -296,7 +308,7 @@ function checkerboardIndex(aim) {
 
 ```
 
-The hunting algorithm is also something I am very proud of, but since I was able to break it down into smaller parts to solve individually, it wasn't as much of a headache:
+-The hunting algorithm is also something I am very proud of, but since I was able to break it down into smaller parts to solve individually, it wasn't as much of a headache:
 
 ```javascript
 function huntRandom(){
@@ -390,12 +402,12 @@ Once the basic game logic was set implementing the game-modes came with its own 
 
 Special mention to the CSS as well, in which I investigated experimented with and implemented many new things I had never done or seen before, such as text perspective, text gradient "overlay", glow, glow animation...
 
-Finding spaceship images that met my needs was a massive pain as well, I tried DALL-E 4 to create them but to no avail, that's why a keen eye can see "artistic discrepances" between them.
+Finding spaceship images that met my needs was a massive pain as well, I tried DALL-E 4 to create them but to no avail, that's why a keen eye can spot "artistic discrepances" between them.
 
 ## Bugs
-There have been a number of bugs in my code, most solved within the hour, there was however a very persistent and difficult to catch bug, which caused the computer to shoot many times and indiscriminately. When the code was tested in a computer other than mine, it didn't occurr, however, since I believed it to be because of the recursion necessary to house shot() and enemyShot() as one unique function, I separated them into two and the issue stopped, at a bit of a cost in DRYness
+There have been a number of bugs in my code, most solved within the hour, there was however a very persistent and difficult to catch bug, which caused the computer to shoot many times and indiscriminately in a single turn. When the code was tested in a computer other than mine, it didn't occurr, however, since I believed it to be because of the recursion necessary to house shot() and enemyShot() as one unique function, I separated them into two and the issue stopped, at a bit of a cost in DRYness.
 
 ## Future Improvements/Other considerations
-Had I had another week to work on this project, I would've tried to refine the AI targeting further, taking into consideration the largest ship the enemy has remaining, and where could it hide. I would play endless matches to consider how I decide my next target myself, and translate that to code to make the AI as human as possible and not have it be a cheat, even if nostalgia dictates it should be.
+Had I had another week to work on this project, I would've tried to refine the AI targeting further, taking into consideration the largest ship the enemy has remaining, and where could it hide. I would play endless matches to consider how I decide my next target myself, and translate that into code to make the AI as human as possible and not have it be a cheat, even if nostalgia dictates it should be.
 
 Still, I am proud of what I have achieved here, but I wonder what could have been... Maybe one day...
