@@ -1,4 +1,3 @@
-//TODO: difficulty levels?? 2 player functionality(refactor aim[] into player{}) ?? READMEEE
 //* Object's'
 
 class Ship{
@@ -17,7 +16,7 @@ class Ship{
 
 //* Variables
 // all variables are let so the restart button can do its job
-let turndata // this varable is so eventlisteners for placing can work
+let turndata // this varable is so eventlisteners for placing can work in 2 players
 let playerShips = []
 let enemyShips = []
 let occupiedPlayer = []
@@ -45,7 +44,6 @@ const enemySelect = document.querySelector('.player').querySelectorAll('.ship')
 const display = document.querySelector('#display')
 const restart = document.getElementById('restart')
 
-
 //variable generation
 if (gameMode === '2p') {
   turn = !turn
@@ -69,7 +67,9 @@ for (let i = 0; i < 10; i++) {
 }
 
 //* Executions
+
 //! PLACEMENTS
+
 function shipCells(index) {
   if (shipNew) {
     const targetCells = []
@@ -100,7 +100,7 @@ function shipCells(index) {
   }
 }
 
-function playerPlacement(index) { //TODO work in progress!
+function playerPlacement(index) {
   const targetCells = shipCells(index)
   let aim
   if (turn) {
@@ -108,7 +108,7 @@ function playerPlacement(index) { //TODO work in progress!
   } else {
     aim = [enemyShips, enemyGrid, occupiedEnemy]
   }
-  const check = collision(targetCells)//here
+  const check = collision(targetCells)
   if (targetCells && !check) {
     targetCells.forEach(value => {
       aim[1][value].classList.add('positioned')
@@ -123,6 +123,9 @@ function playerPlacement(index) { //TODO work in progress!
   if (aim[0].length === 5){
     if (gameMode !== '2p') {
       placementFinished = !placementFinished
+      const au = new Audio('sound/placement_done.mp3')
+      au.volume = 0.2
+      au.play()
       turn = !turn
       info('<p>-- TO WAR!! --</p>')
       announcement('<p>-- AI PLACING... --</p><p>-- PUNY HUMAN! --</p>', 2000)
@@ -137,7 +140,9 @@ function playerPlacement(index) { //TODO work in progress!
       }, 3000)
     } else if (!turn) {
       placementFinished = !placementFinished
-      // this timeout is needed to ensure player 2 doesent shoot himself!
+      const au = new Audio('sound/placement_done.mp3')
+      au.volume = 0.2
+      au.play()
       obscure()
       setTimeout(() =>{
         turn = !turn
@@ -176,14 +181,16 @@ function enemyPlacement() {
   })
   turn = !turn
 }
-// check for collision
+
 function collision(targetCells) {
   const occupied = turn ? occupiedPlayer : occupiedEnemy
   if (targetCells) return targetCells.some(pos => occupied.includes(pos)) 
 }
+
 //! END OF PLACEMENTS
 
 //! COMBAT
+
 function shot(index){
   if (continueGame) {
     const aim = painComingTo()
@@ -213,7 +220,6 @@ function enemyShot() {
   //to keep computer from running wild
   if (continueGame) {
     const aim = painComingTo()
-
     if (targeting.length < 3) {
       targeting.push(Math.random() > 0.5 ? 0 : 1)
     }
@@ -320,16 +326,26 @@ function hit(index) {
 
 function miss(index) {
   const aim = painComingTo()
-  //console.log(`aim: ${aim} index: ${index}`)
   aim[1][index].style.backgroundColor = 'rgba(140 147 254 / 80%)'
   const au = new Audio('sound/miss.mp3')
   au.volume = 0.1
   au.play()
 }
+
 //! END OF COMBAT
 
 //! GLOBAL AUXILIARIES
+
 function checkerboardIndex(aim) {
+  if (gameMode === 'hard' && Math.random() < 0.15) {
+    const kill = occupiedPlayer.slice(0, occupiedPlayer.length - 1)
+    for (let i = kill.length - 1; i >= 0 ; i--) {
+      if (hitPlayerCells.includes(kill[i])) {
+        kill.splice(i, 1)
+      }
+    }
+    return kill[Math.floor(Math.random() * kill.length)]
+  }
   const index = Math.floor(Math.random() * 50)
   return !aim[3].includes(targeting[targeting[2]][index]) ? targeting[targeting[2]][index] : checkerboardIndex(aim)
 }
@@ -344,7 +360,7 @@ function painComingTo() {
 }
 
 function endGame() {
-  const screen = gameMode === '2p' ? ['<p>-- PLAYER 1 WINS! --</p>', '<p>-- PLAYER 2 WINS! --</p>'] : ['<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>', '<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>']
+  const screen = gameMode === '2p' ? ['<p>-- PLAYER 2 WINS! --</p>', '<p>-- PLAYER 1 WINS! --</p>'] : ['<p>-- CONGRATULATIONS! --</p><p>-- VICTORY! --</p>', '<p>-- PUNY HUMAN! --</p><p>-- DEFEATED! --</p>']
   turn = !turn
   revisualize()
   turn = !turn
@@ -357,10 +373,10 @@ function endGame() {
     } else {
       info(screen[1])
     }
-    if (count === 1000) {
+    if (count === 3000) {
       clearInterval(interval)
     }
-  }, 15)
+  }, 5)
 }
 
 function announcement(message, period) {
@@ -414,7 +430,9 @@ function revisualize() {
 }
 
 //! END OF EXECUTIONS
+
 //* Events
+
 //! PLACEMENT EVENTS
 
 turndata.forEach((data) => {
@@ -516,8 +534,6 @@ if (gameMode === '2p') {
     })
   })
 }
-
-
 
 //! AUXILIARY EVENTS
 

@@ -7,9 +7,10 @@
 7 days, worked independently
 
 ## Technologies used
-* JavaScript (ES6)/ JS audio
+* JavaScript / JS audio
 * HTML5
 * CSS/Flexbox
+* Git
 * GitHub
 
 ## [Battleship][battleship] - JavaScript application
@@ -42,6 +43,7 @@ I provided a basic wireframe of the playing field:
 <img src="img/wireframe.png">
 
 Along with pseudocode for the project:
+
 ```
 //* Objects
 /*
@@ -140,7 +142,6 @@ playerGrid.forEach((value, index) => {
       }, 2000)
       return
     } else {
-      console.log(index)
       playerPlacement(index)
     }
   })
@@ -177,9 +178,9 @@ playerGrid.forEach((value, index) => {
 })
 
 ```
-from the on I had to code the player ship placement and the computers, avoiding collisions and allowing both horizontal and vertical placement, and in the case of the player, allowing to reposition any ship.
+From then on I had to code the player ship placement and the computers', avoiding collisions and allowing both horizontal and vertical placement, and in the case of the player, allowing to reposition any ship.
 
-From that point on, I started working on the second phase of the game, the "combat". I created a function to randomise computer shots, to get to work and debug the game until it finally worked and eventually reprogrammed it so shots aren't completely random. In the meantime I had a very big issue because shot() handled both player and computer shots:
+From that point on, I started working on the second phase of the game, the "combat". I created a function to randomise computer shots, to get to work and debug the game until it finally worked and eventually reprogrammed it so shots weren't completely random. In the meantime I had a very big issue because shot() handled both player and computer shots:
 
 ```javascript
 function shot(index){ 
@@ -191,10 +192,8 @@ function shot(index){
     } else if (aim[3].includes(index)) {
       if (!turn) {
         shot(randomIndex())
-        console.log(shotTaken)
       } else {
         control++
-        console.log(control)
         announcement('<p>-- ENGAGE NEW TARGET --</p>', 1000)
         return false
       }
@@ -211,7 +210,7 @@ function shot(index){
 }
 ```
 
-The recursiveness caused the computer, in some machines, to take multiple shots; sometimes to its own grid. In later versions shot() would be independent from enemyShot():
+I believe it was the recursiveness that caused the computer, in some machines, to take multiple shots; sometimes to its own grid. To tackle this issue, in later versions shot() would be independent from enemyShot():
 
 ```javascript
 function shot(index){
@@ -261,7 +260,7 @@ function enemyShot() {
 ```
 Of course, in the meantime, I implemented many details, such as audio feedback for shots and misses, explosion gifs for hit cells, and messaging on the bottom display.
 
-I eventually created an algorithm for hunting a ship that has been hit already and acheckerboard pattern to make the computers shooting algorithm a bit more 'purposeful' when not engaged in an active hunt (this last part was for some weird reason THE single hardest thing to conceptualise for me)
+I eventually created an algorithm for hunting a ship that has been hit already and a checkerboard pattern to make the computers shooting algorithm a bit more 'purposeful' when not engaged in an active hunt (this last part was for some weird reason THE single hardest thing to conceptualise for me)
 
 ```javascript
 let targeting = [[], []]
@@ -275,15 +274,15 @@ for (let i = 0; i < 10; i++) {
     }
   }
 }
-// and also:
+
 function checkerboardIndex(aim) {
   const index = Math.floor(Math.random() * 50)
   return !aim[3].includes(targeting[targeting[2]][index]) ? targeting[targeting[2]][index] : checkerboardIndex(aim)
 }
-//targeting[2] gets randomised the very first time enemyShot is accessed, aim is all the targeting data necessary for the turn
+
 ```
 
-the hunting algorithm is also something I am proud of, but since I was able to break it down into smaller parts to solve individually, it wasn't as much of a headache:
+The hunting algorithm is also something I am proud of, but since I was able to break it down into smaller parts to solve individually, it wasn't as much of a headache:
 
 ```javascript
 function huntRandom(){
@@ -321,9 +320,59 @@ function huntRandom(){
   return options
 }
 ```
+In the final days of the project I went on to implement difficulty levels and functionality for 2(two) players. I solved the medium and easy diffculties easily enough but I thought I'd leave the hard difficulty for last since the idea I had implied changing the hunting algorithm to detect the widest open spaces possible within the grid and concentrate fire on those; and I truly thought I didn't have time left, so I started with the multiplayer which I thought would be easier, and I was wrong, as it was its own can of worms. Still I managed it, and by the end with not much time to go I thought of making the hard difficulty; but instead of making a proper AI which I had no time left for, making it a bit of a cheat, like a proper vintage arcade videogame!
+
+For the sake of brevity I won't share all the code created/changed but I will share on one hand the cheating mechanic, made inside the checkerboarding function:
+
+```javascript
+function checkerboardIndex(aim) {
+  if (gameMode === 'hard' && Math.random() < 0.15) {
+    const kill = occupiedPlayer.slice(0, occupiedPlayer.length - 1)
+    for (let i = kill.length - 1; i >= 0 ; i--) {
+      if (hitPlayerCells.includes(kill[i])) {
+        kill.splice(i, 1)
+      }
+    }
+    return kill[Math.floor(Math.random() * kill.length)]
+  }
+  const index = Math.floor(Math.random() * 50)
+  return !aim[3].includes(targeting[targeting[2]][index]) ? targeting[targeting[2]][index] : checkerboardIndex(aim)
+}
+```
+
+And on the other hand, the game-mode selection logic, which I had to investigate about localStorage to do:
+
+```javascript
+document.querySelectorAll('button').forEach((value => {
+  value.addEventListener('click', (e) => {
+    let variable
+    if (e.target.innerText === 'PLAY EASY') {
+      variable = 'easy'
+    } else if (e.target.innerText === 'PLAY NORMAL') {
+      variable = 'normal'
+    } else if (e.target.innerText === 'PLAY HARD') {
+      variable = 'hard'
+    } else if (e.target.innerText === '2 PLAYERS') {
+      variable = '2p'
+    }
+    localStorage.setItem('gameMode', variable)
+    
+    document.querySelector('.botonera').style.display = 'none'
+    const au = new Audio('sound/onindex.mp3')
+    au.volume = 0.2
+    au.play()
+    setTimeout(() =>{
+      window.location.href = 'game.html'
+    },4500)
+  })
+}))
+```
+In the end everything works, and while I believe the multiplayer to be a pain to play (sharing the screen with your opponent is less than ideal), it doesen't detract from the rest of the game and its a legitimate option if someone wants to give it a go.
 
 ## Wins and Challenges(TLDR)
-To be completely honest, my wins here are the same as the challenges, more specifically beating those challenges. The AI targeting checkerboarding or the hunting algorithm are good examples of what I'm referring to. 
+To be completely honest, my wins here are (mostly) the same as the challenges, more specifically: beating those challenges. The AI targeting checkerboarding or the hunting algorithm are good examples of what I'm referring to.
+
+Once the basic game logic was set implementing the game-modes came with its own particular set of challenges and growing pains (and bugs!). Using localStorage I wouldn't classify as a Challenge per se, but it definetly represented growth, so I would no doubt classify as a Win.
 
 Special mention to the CSS as well, in which I investigated experimented with and implemented many new things I had never done or seen before, such as text perspective, text gradient "overlay", glow, glow animation...
 
@@ -333,6 +382,6 @@ Finding spaceship images that met my needs was a massive pain as well, I tried D
 There have been a number of bugs in my code, most solved within the hour, there was however a very persistent and difficult to catch bug, which caused the computer to shoot many times and indiscriminately. When the code was tested in a computer other than mine, it didn't occurr, however, since I believed it to be because of the recursion necessary to house shot() and enemyShot() as one unique function, I separated them into two and the issue stopped, at a bit of a cost in DRYness
 
 ## Other considerations
-Had I had another week to work on this project, I would've tried to refine the AI targeting further, taking into consideration the largest ship the enemy has remaining, and where could it hide. I would try to implement difficulty levels, from the completely randomised shooting to the previously explained refined targeting, and implement a good 2 player functionality.
+Had I had another week to work on this project, I would've tried to refine the AI targeting further, taking into consideration the largest ship the enemy has remaining, and where could it hide. I would play endless matches to consider how I decide my next target myself, and translate that to code to make the AI as human as possible and not have it be a cheat, even if nostalgia dictates it should be.
 
 Still, I am proud of what I have achieved here, but I wonder what could have been... Maybe one day...
