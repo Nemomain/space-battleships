@@ -9,7 +9,7 @@
 ## Technologies used
 * JavaScript / JS audio
 * HTML5
-* CSS/Flexbox
+* CSS/Flexbox/Glow/Animations/Text Manipulation
 * Git
 * GitHub
 
